@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 *.wav
 *.mp4
+.github/workflows/render.yml
