@@ -1,0 +1,7 @@
+numpy
+pillow
+imageio
+imageio-ffmpeg
+moviepy
+tinysoundfont
+mido

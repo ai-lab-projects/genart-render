@@ -1,0 +1,30 @@
+name: render
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'render command, e.g. "compose.py --style lofi --wav outputs/lofi.wav --roll outputs/lofi.mp4 --bars 20"'
+        required: true
+        default: 'physics_sim.py --scene hexagon --output outputs/hex.mp4 --seconds 30'
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: deps
+        run: pip install -r requirements.txt
+      - name: soundfonts
+        run: bash fetch_soundfonts.sh
+      - name: render
+        run: |
+          mkdir -p outputs
+          GENART_SF_DIR="$PWD/soundfonts" python src/${{ inputs.command }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: render-output
+          path: outputs/

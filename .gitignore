@@ -1,0 +1,6 @@
+soundfonts/
+outputs/
+__pycache__/
+*.pyc
+*.wav
+*.mp4
