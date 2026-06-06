@@ -40,6 +40,9 @@ STYLES = {
     "atonal": dict(key=0, bpm=60, swing=0.0, prog=[(0,"maj"),(0,"maj"),(0,"maj"),(0,"maj")],
                    programs={0:0, 1:48, 2:48}, drums=False, lead_oct=12, atonal=True,
                    desc="contemporary/atonal: free chromatic clusters, sparse pointillism, no functional harmony"),
+    "waltz": dict(key=0, bpm=138, swing=0.0, meter=3, prog=[(0,"maj"),(9,"min"),(5,"maj"),(7,"dom7")],
+                  programs={0:9, 1:0, 2:0}, drums=False, lead_oct=12, waltz=True,
+                  desc="warm 'honobono' waltz: 3/4 oom-pah-pah, glockenspiel melody over real piano. original, publishable"),
     "minimal_e": dict(key=9, bpm=104, swing=0.0, prog=[(9,"min"),(4,"min"),(5,"maj"),(7,"maj")],
                       programs={0:0, 1:4, 2:4}, drums=False, lead_oct=12, additive=True,
                       desc="minimalism with an electric-piano (electone-ish) lower voice + real-piano arpeggio lead"),
@@ -61,7 +64,7 @@ def plan(style):
 def compose(style, seed, bars):
     s = STYLES[style]
     rng = np.random.default_rng(seed)
-    bpm = s["bpm"]; b = 60.0 / bpm; bar = 4 * b
+    bpm = s["bpm"]; b = 60.0 / bpm; bar = s.get("meter", 4) * b
     key = s["key"] + 60
     prog = s["prog"]
     sw = s.get("swing", 0.0)
@@ -78,6 +81,20 @@ def compose(style, seed, bars):
         root, ctype = prog[bi % len(prog)]
         chord = [key + root + iv for iv in CH[ctype]]
 
+        if s.get("waltz"):
+            # 3/4 oom-pah-pah: bass on beat 1, chord on beats 2 & 3, gentle stepwise melody
+            scale = [key + root + i for i in (DOR if "min" in ctype else MAJ)]
+            ev.append((t0, chord[0] - 24, b * 0.9, 72, 1))                      # bass (real piano low)
+            for beat in (1, 2):                                                 # pah-pah chords
+                for k, n in enumerate(chord[:3]):
+                    ev.append((t0 + beat * b, n - 12, b * 0.8, 46 - 3 * k, 2))
+            prev = chord[2] + s["lead_oct"]
+            for onset, dur in [(0.0, 1.0), (1.0, 0.5), (1.5, 0.5), (2.0, 1.0)]:  # warm melody (glockenspiel)
+                if rng.random() < (0.9 if onset in (0.0, 2.0) else 0.6):
+                    pool = [c + s["lead_oct"] for c in chord] + [x + s["lead_oct"] for x in scale]
+                    n = int(min(pool, key=lambda x: abs(x - prev) + rng.uniform(0, 4)))
+                    ev.append((t0 + onset * b, n, b * dur, 62, 0)); prev = n
+            continue
         if s.get("chaos"):
             # storm: many fast random chromatic notes across the full keyboard, overlapping voices
             for _ in range(int(rng.integers(16, 24))):
