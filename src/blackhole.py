@@ -30,27 +30,29 @@ def _starfield(dirs):
     gx = np.floor((np.arctan2(z, x) + math.pi) / (2*math.pi) * 1400).astype(np.int64)
     gy = np.floor((np.arcsin(np.clip(y, -1, 1)) + math.pi/2) / math.pi * 800).astype(np.int64)
     h = (gx * 73856093) ^ (gy * 19349663)
-    h = (h ^ (h >> 13)) & 1023
-    star = (h < 4).astype(np.float32)                       # ~0.4% pixels are stars
-    bright = ((h % 7) / 6.0) * star
+    h = (h ^ (h >> 13)) & 2047
+    star = (h < 2).astype(np.float32)                       # sparser, dimmer -> stable backdrop not flicker
+    bright = (0.35 + 0.45*((h % 7) / 6.0)) * star
     col = np.zeros(dirs.shape, np.float32)
     for c in range(3):
-        col[..., c] = bright * (200 + 55*((h>>(c*2)) & 1))
-    # faint blue nebula gradient
-    neb = (0.5 + 0.5*np.sin(x*3+1)) * (0.5+0.5*np.cos(y*2))
-    col[..., 0] += neb*10; col[..., 1] += neb*14; col[..., 2] += neb*26
+        col[..., c] = bright * (150 + 40*((h>>(c*2)) & 1))
+    neb = (0.5 + 0.5*np.sin(x*3+1)) * (0.5+0.5*np.cos(y*2))  # very faint nebula
+    col[..., 0] += neb*4; col[..., 1] += neb*6; col[..., 2] += neb*14
     return col
 
 
-def _disk_color(r, phi_speed):
-    """emission color by disk radius (hot inner -> cooler outer) + brightness falloff."""
+def _disk_color(r, az, spin):
+    """emission by radius (hot inner->cool outer) x swirling spiral arms (rotate w/ spin) x Doppler."""
     t = np.clip((r - DISK_IN) / (DISK_OUT - DISK_IN), 0, 1)
-    bri = (1.0 - t) ** 1.5 * 1.4 + 0.15
-    col = np.stack([255*np.ones_like(t), 200 - 120*t, 90 - 70*t], -1) * bri[..., None]
-    return col
+    bri = (1.0 - t) ** 1.7 * 1.0 + 0.12
+    swirl = 0.55 + 0.45*np.sin(2.0*az - spin - 6.0*t)       # spiral arms winding inward, rotating
+    dopp = 0.55 + 0.65*np.cos(az - 1.1)                     # one side brighter (relativistic beaming look)
+    b = bri * swirl * dopp
+    col = np.stack([255*np.ones_like(t), 205 - 120*t, 95 - 70*t], -1) * b[..., None]
+    return np.clip(col, 0, 255)
 
 
-def render_frame(cam_ang, W, H, fov=0.42, steps=700, dphi=0.022, inc=1.40):
+def render_frame(cam_ang, W, H, fov=0.42, steps=700, dphi=0.022, inc=1.40, spin=0.0):
     # camera position (orbit azimuthally at fixed inclination)
     C = CAM_D * np.array([math.sin(cam_ang)*math.sin(inc), math.cos(inc), math.cos(cam_ang)*math.sin(inc)])
     e_r = C / np.linalg.norm(C)                              # BH->camera (same for all pixels)
@@ -94,7 +96,10 @@ def render_frame(cam_ang, W, H, fov=0.42, steps=700, dphi=0.022, inc=1.40):
         # disk crossing: world-y changed sign, at radius in disk band, near equatorial plane
         cross = a & (prev_y*py < 0) & (r_n > DISK_IN) & (r_n < DISK_OUT)
         if cross.any():
-            disk_acc[cross] += _disk_color(r_n[cross], None)
+            px = r_n[cross]*(cphi[cross]*e_r[0] + sphi[cross]*e_t[cross, 0])
+            pz = r_n[cross]*(cphi[cross]*e_r[2] + sphi[cross]*e_t[cross, 2])
+            az = np.arctan2(pz, px)                           # disk-plane azimuth of crossing point
+            disk_acc[cross] += _disk_color(r_n[cross], az, spin)
             done[cross] = True                                # opaque disk
         # horizon capture
         cap = a & (r_n <= RS*1.02)
@@ -128,15 +133,23 @@ def main():
     ap.add_argument("--fps", type=int, default=24)
     ap.add_argument("--still", action="store_true")
     a = ap.parse_args()
+    def cam_for(i):
+        f = i / a.frames
+        inc = 1.32 - 0.60*math.sin(math.pi*f)        # tilt edge-on -> toward face-on -> back (halo morphs)
+        spin = 2*math.pi*f*3.0                        # disk makes 3 rotations over the clip
+        cam_ang = 2*math.pi*f*0.5                     # slow half azimuth orbit
+        return cam_ang, inc, spin
     if a.still:
-        Image.fromarray(render_frame(0.0, a.w, a.h)).save(a.output)
+        ca, inc, spin = cam_for(a.frames//6)
+        Image.fromarray(render_frame(ca, a.w, a.h, inc=inc, spin=spin)).save(a.output)
         print(f"[OK] still -> {a.output}"); return
     out = Path(a.output); out.parent.mkdir(parents=True, exist_ok=True)
     cnt = a.count or a.frames
     wri = imageio.get_writer(str(out), fps=a.fps, codec="libx264", quality=8, macro_block_size=8)
     for k in range(cnt):
         i = a.start + k
-        wri.append_data(render_frame(2*math.pi*i/a.frames, a.w, a.h))
+        ca, inc, spin = cam_for(i)
+        wri.append_data(render_frame(ca, a.w, a.h, inc=inc, spin=spin))
         print(f"  frame {i+1}/{a.frames}", flush=True)
     wri.close()
     print(f"[OK] black hole frames [{a.start},{a.start+cnt}) -> {out}")
