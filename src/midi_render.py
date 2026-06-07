@@ -24,6 +24,51 @@ CH_COLORS = [
 ]
 
 
+def humanize(events, span, seed=0, strength=1.0):
+    """Add expressive performance to flat MIDI: tempo rubato + dynamics + accents + end ritardando.
+    strength (0..1) scales how much deviation is applied (lower = more restrained / tasteful)."""
+    rng = np.random.default_rng(seed)
+    S = strength
+    ev = sorted(events, key=lambda e: e[0])
+    if not ev:
+        return events, span
+    from collections import defaultdict
+    grp = defaultdict(list)
+    for e in ev:
+        grp[round(e[0], 3)].append(e)
+    G = 2000
+    grid = np.linspace(0, span, G); dt = grid[1] - grid[0]
+    rub = 1.0 + (0.07*S)*np.sin(2*np.pi*grid/(span/8))      # gentle push/pull, ~8 phrases
+    endr = np.clip((grid - 0.9*span)/(0.1*span), 0, 1)
+    tempo = rub*(1 - (0.40*S)*endr)                          # ritardando at the very end
+    onsets = np.array([e[0] for e in ev])
+    dens = np.array([np.sum(np.abs(onsets - g) < 0.4) for g in grid], np.float32)
+    dens = dens/(dens.max()+1e-9)
+    tempo = tempo * (1.0 - 0.08*S + 0.16*S*dens)            # denser -> slightly quicker
+    newt = np.cumsum(1.0/tempo)*dt; newt -= newt[0]
+    dyn = (1 - 0.22*S) + (0.38*S)*(0.5 + 0.5*np.sin(2*np.pi*grid/(span/4) - 1.0))   # dynamic swells
+    out = []
+    for (t, n, dur, vel, tr) in ev:
+        nt = float(np.interp(t, grid, newt))
+        nd = max(0.05, float(np.interp(t+dur, grid, newt)) - nt)
+        members = grp[round(t, 3)]
+        is_chord = len(members) >= 3
+        is_top = (n == max(m[1] for m in members))
+        is_bass = (n == min(m[1] for m in members))
+        v = vel * float(np.interp(t, grid, dyn))
+        if is_chord: v += 13*S                               # accent chords (sforzando feel)
+        if is_top:   v += 11*S                               # melody sung out
+        elif not is_bass: v -= 6*S                           # inner voices softer (voicing balance)
+        v = int(np.clip(v + rng.integers(-3, 4), 18, 125))
+        nd *= (1 + 0.30*S)                                   # pedal-legato: notes ring into each other
+        if is_chord: nd *= (1 + 0.10*S)                      # agogic on chords
+        if is_chord and tr == "piano":
+            nt += 0.015*S                                    # tiny breath before strong chords
+        out.append((nt, n, nd, v, tr))
+    out.sort(key=lambda e: e[0])
+    return out, max(e[0]+e[2] for e in out)
+
+
 def gm_events(path):
     """Parse a MIDI honoring per-channel program changes. Returns (events, programs, span).
     events: [(t, midi, dur, vel, channel)]; programs: {channel: gm_program}."""
@@ -126,6 +171,7 @@ def main():
     ap.add_argument("--title", default="MIDI")
     ap.add_argument("--track", default="piano", choices=list(V.TRACKS))
     ap.add_argument("--gm", action="store_true", help="multi-instrument GM playback (game music)")
+    ap.add_argument("--humanize", action="store_true", help="expressive performance (rubato + dynamics)")
     ap.add_argument("--seed", type=int, default=3)
     ap.add_argument("--max-seconds", type=float, default=0.0, help="trim to this length (0 = full)")
     a = ap.parse_args()
@@ -133,6 +179,9 @@ def main():
         ev, programs, span = gm_events(a.midi)
         if a.max_seconds and span > a.max_seconds:
             ev = [e for e in ev if e[0] < a.max_seconds]; span = a.max_seconds
+        if a.humanize:
+            ev, span = humanize(ev, span, a.seed)
+            print(f"[humanize] applied (rubato + dynamics)")
         print(f"[midi-gm] {len(ev)} notes, {span:.1f}s, channels {sorted(set(e[4] for e in ev))}")
         L, R = render_gm_audio(ev, programs, span, a.seed)
         V.write_wav(a.wav, L, R)
