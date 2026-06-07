@@ -28,3 +28,4 @@ jobs:
         with:
           name: render-output
           path: outputs/
+          retention-days: 1   # 成果物は DL 後すぐ用済み → 1日で自動削除 (0.5GB 無料枠を食わない)
