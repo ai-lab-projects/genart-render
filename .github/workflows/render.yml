@@ -10,6 +10,8 @@ jobs:
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    permissions:
+      contents: write   # Release 作成に必要
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,8 +26,13 @@ jobs:
         run: |
           mkdir -p outputs
           GENART_SF_DIR="$PWD/soundfonts" python src/${{ inputs.command }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: render-output
-          path: outputs/
-          retention-days: 1   # 成果物は DL 後すぐ用済み → 1日で自動削除 (0.5GB 無料枠を食わない)
+      # 成果物は artifact でなく Release で受け渡す (Release ストレージは無料・無制限、
+      # Actions の 0.5GB 枠を一切食わない)。取得側 (genart_ci.sh) が DL 後この Release を削除する。
+      - name: publish outputs as a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="render-${{ github.run_id }}"
+          gh release create "$TAG" outputs/* \
+            --title "$TAG" \
+            --notes "auto render output for run ${{ github.run_id }} — delete after download"
