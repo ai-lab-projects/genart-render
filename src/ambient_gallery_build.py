@@ -12,20 +12,21 @@ HERE = Path(__file__).resolve().parent
 PY = sys.executable
 FF = imageio_ffmpeg.get_ffmpeg_exe()
 
-# still(--mode still→PNG)を出せる多様なエンジン。1本ごとに見た目が全然違う。
+# still(--mode still→PNG)を出せる多様なエンジン。(script, seed対応?, 追加flags)。
+# seed対応は4個のみ(他は--seed渡すとエラー=2026-06-19確認)。全12engで毎回12種の別模様。
 STILL_ENGINES = [
-    ("strange2d_simulator.py", []),
-    ("phyllotaxis_simulator.py", []),
-    ("newton_simulator.py", []),
-    ("differential_growth_simulator.py", []),
-    ("chladni_simulator.py", []),
-    ("attractor3d_simulator.py", []),
-    ("newton_basins_simulator.py", []),
-    ("magnetic_pendulum_simulator.py", []),
-    ("percolation_simulator.py", []),
-    ("cyclic_ca_simulator.py", []),
-    ("greenberg_hastings_simulator.py", []),
-    ("three_body_simulator.py", []),
+    ("strange2d_simulator.py", False, []),
+    ("phyllotaxis_simulator.py", False, []),
+    ("newton_simulator.py", False, []),
+    ("chladni_simulator.py", False, []),
+    ("attractor3d_simulator.py", False, []),
+    ("newton_basins_simulator.py", False, []),
+    ("magnetic_pendulum_simulator.py", False, []),
+    ("cyclic_ca_simulator.py", False, []),
+    ("differential_growth_simulator.py", True, []),
+    ("percolation_simulator.py", True, []),
+    ("greenberg_hastings_simulator.py", True, []),
+    ("three_body_simulator.py", True, []),
 ]
 
 
@@ -44,7 +45,7 @@ def run(cmd, cap=None, fatal=True):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
-    ap.add_argument("--n", type=int, default=10, help="still枚数(別エンジンから)")
+    ap.add_argument("--n", type=int, default=12, help="still枚数(別エンジンから, 最大=エンジン数)")
     ap.add_argument("--seconds", type=float, default=840.0)
     ap.add_argument("--per", type=float, default=9.0)
     ap.add_argument("--seed-base", type=int, default=100)
@@ -59,13 +60,16 @@ def main():
     tmp = out.parent / f"_gal_{out.stem}"; stills = tmp / "stills"; stills.mkdir(parents=True, exist_ok=True)
     montage = tmp / "montage.mp4"; music = tmp / "music.wav"
 
-    # 1) 別エンジンから still を集める(1枚失敗しても継続)
-    print(f"[1/4] still {a.n}枚 (多エンジン)")
+    # 1) 別エンジンから still を集める(1枚失敗しても継続)。seedは対応simのみ。
+    engines = (STILL_ENGINES[a.engine_offset:] + STILL_ENGINES[:a.engine_offset])[:a.n]
+    print(f"[1/4] still {len(engines)}種エンジン")
     got = 0
-    for i in range(a.n):
-        script, flags = STILL_ENGINES[(a.engine_offset + i) % len(STILL_ENGINES)]
-        ok = run([PY, str(HERE / script), "--mode", "still", "--seed", str(a.seed_base + i),
-                  "--output", str(stills / f"s{i:02d}.png")] + flags, cap=300, fatal=False)
+    for i, (script, seedable, flags) in enumerate(engines):
+        cmd = [PY, str(HERE / script), "--mode", "still", "--output", str(stills / f"s{i:02d}.png")]
+        if seedable:
+            cmd += ["--seed", str(a.seed_base + i)]
+        cmd += flags
+        ok = run(cmd, cap=300, fatal=False)
         got += 1 if ok else 0
     if got < 3:
         raise SystemExit(f"[FAIL] still {got}枚しか取れず")
