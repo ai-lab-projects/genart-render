@@ -45,6 +45,9 @@ def main():
     ap.add_argument("--music-seed", type=int, default=1)
     ap.add_argument("--music-key", choices=["minor", "major"], default="minor")
     ap.add_argument("--music", default=None, help="既存音源(wav/mp4)をBGMに使う(クラシック等)。尺は曲長に合わせる(<=870)")
+    import ambient_music
+    ap.add_argument("--music-engine", default="generative", choices=ambient_music.ENGINES, help="generative/lofi/nature/soundtrack")
+    ap.add_argument("--music-variant", default=None, help="nature: rain/stream/waves, soundtrack: index")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     # --music 指定時: 尺を曲長に合わせる(ループ無し, <=15分)
@@ -76,9 +79,8 @@ def main():
         print(f"[2/3] BGM=既存音源 {Path(a.music).name} ({a.seconds:.0f}s)")
         music = Path(a.music)   # 既存ファイルをそのまま使う(ffmpegがmp4からも音声抽出)
     else:
-        print("[2/3] 音楽生成(generative)")
-        run([PY, str(HERE / "generative_music.py"), "--output", str(music),
-             "--seconds", str(a.seconds), "--seed", str(a.music_seed), "--key", a.music_key], cap=600)
+        print(f"[2/3] 音楽生成({a.music_engine}" + (f"/{a.music_variant}" if a.music_variant else "") + ")")
+        run(ambient_music.music_cmd(a.music_engine, music, a.seconds, a.music_seed, a.music_key, a.music_variant), cap=600)
     # 3) stream_loop で尺延長しつつ音楽 afade mux、**単一パスで再エンコード**(crf23で~150MB、巨大中間を作らずディスク節約)
     print("[3/3] ループ延長+mux+再エンコード(crf23)")
     fo = max(a.seconds - 3.0, 0.0)
