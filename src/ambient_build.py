@@ -21,9 +21,7 @@ SIMS = {
     "flow":     ("ambient_flow_simulator.py", "--variant"),   # 'silk lanes'|'tight eddies'|'broad streams'|'many vortices'
     "water":    ("water_simulator.py", "--palette"),          # teal 等
     "plasma":   ("plasma_simulator.py", None),                # 流れる液体色(解析式=高速・継ぎ目なし)
-    "reaction": ("reaction_diffusion_simulator.py", None),    # Gray-Scott反応拡散(毎フレームsim=重い→CI推奨)
-    "fire":     ("fire_simulator.py", None),                  # 炎(暖炉系, 毎フレームsim=重い→CI推奨)
-    # aurora は user評価イマイチで除外(2026-06-21)
+    # aurora/reaction/fire は user評価で除外(2026-06-21): auroraイマイチ, reaction=24sループ繰返し不向き, fire=前回不調
 }
 
 
