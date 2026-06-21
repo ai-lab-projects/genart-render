@@ -82,6 +82,17 @@ def main():
     if got < 3:
         raise SystemExit(f"[FAIL] still {got}枚しか取れず")
     print(f"  {got}枚 取得")
+    # 1.5) 中央クロップ: 解説simのstillは端にテキストラベル(曲名/角度等)が乗る→ambientに不要。
+    #      各辺13%を切り落として除去(美しい中心の模様は残り,むしろ画面を埋めて見栄え向上)。
+    from PIL import Image
+    crop = 0.13
+    for png in sorted(stills.glob("*.png")):
+        try:
+            im = Image.open(png); w, h = im.size
+            dx, dy = int(w * crop), int(h * crop)
+            im.crop((dx, dy, w - dx, h - dy)).save(png)
+        except Exception as e:
+            print(f"  [crop skip] {png.name}: {e}")
     # 2) gallery montage
     print("[2/4] gallery montage")
     run([PY, str(HERE / "gallery_build.py"), str(stills), str(montage), "--per", str(a.per), "--xfade", "1.6"], cap=600)
