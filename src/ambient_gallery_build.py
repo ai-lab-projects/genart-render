@@ -14,27 +14,29 @@ FF = imageio_ffmpeg.get_ffmpeg_exe()
 
 # still(--mode still→PNG)を出せる多様なエンジン。(script, seed対応?, 追加flags)。
 # seed対応は4個のみ(他は--seed渡すとエラー=2026-06-19確認)。全12engで毎回12種の別模様。
+# (script, seedable, flags, clean)。clean=True は still にテキストラベルが無い→中央クロップしない
+# (円形模様が切れるのを防ぐ)。clean=False は解説simでラベルが端に乗る→クロップで除去。
 STILL_ENGINES = [
-    ("strange2d_simulator.py", False, []),
-    ("phyllotaxis_simulator.py", False, []),
-    ("newton_simulator.py", False, []),
-    ("chladni_simulator.py", False, []),
-    ("attractor3d_simulator.py", False, []),
-    ("newton_basins_simulator.py", False, []),
-    ("magnetic_pendulum_simulator.py", False, []),
-    ("cyclic_ca_simulator.py", False, []),
-    ("differential_growth_simulator.py", True, []),
-    ("percolation_simulator.py", True, []),
-    ("greenberg_hastings_simulator.py", True, []),
-    ("three_body_simulator.py", True, []),
-    # Agentic資産を借用(2026-06-21 still mode追加)= ギャラリー素材を別系統の絵柄で拡張。
+    ("strange2d_simulator.py", False, [], False),
+    ("phyllotaxis_simulator.py", False, [], False),
+    ("newton_simulator.py", False, [], False),
+    ("chladni_simulator.py", False, [], False),
+    ("attractor3d_simulator.py", False, [], False),
+    ("newton_basins_simulator.py", False, [], False),
+    ("magnetic_pendulum_simulator.py", False, [], False),
+    ("cyclic_ca_simulator.py", False, [], False),
+    ("differential_growth_simulator.py", True, [], False),
+    ("percolation_simulator.py", True, [], False),
+    ("greenberg_hastings_simulator.py", True, [], False),
+    ("three_body_simulator.py", True, [], False),
+    # Agentic資産を借用(2026-06-21 still mode追加)= 別系統の絵柄。ラベル無し→clean=True(クロップしない)。
     # voronoiは鮮やか虹色でambientトーン非適合→除外。
-    ("apollonian_simulator.py", False, []),          # 円充填ガスケット
-    ("koch_simulator.py", False, []),                # 雪片フラクタル
-    ("dla_simulator.py", True, []),                  # 樹枝(霜/珊瑚)
-    ("sandpile_simulator.py", False, []),            # 砂山曼荼羅
-    ("wave_interference_simulator.py", False, []),   # 干渉縞
-    ("times_table_simulator.py", False, []),         # 倍数の花/曼荼羅
+    ("apollonian_simulator.py", False, [], True),    # 円充填ガスケット
+    ("koch_simulator.py", False, [], True),          # 雪片フラクタル
+    ("dla_simulator.py", True, [], True),            # 樹枝(霜/珊瑚)
+    ("sandpile_simulator.py", False, [], True),      # 砂山曼荼羅
+    ("wave_interference_simulator.py", False, [], True),  # 干渉縞
+    ("times_table_simulator.py", False, [], True),   # 倍数の花/曼荼羅
 ]
 
 
@@ -72,7 +74,10 @@ def main():
     engines = (STILL_ENGINES[a.engine_offset:] + STILL_ENGINES[:a.engine_offset])[:a.n]
     print(f"[1/4] still {len(engines)}種エンジン")
     got = 0
-    for i, (script, seedable, flags) in enumerate(engines):
+    clean_idx = set()
+    for i, (script, seedable, flags, clean) in enumerate(engines):
+        if clean:
+            clean_idx.add(i)
         cmd = [PY, str(HERE / script), "--mode", "still", "--output", str(stills / f"s{i:02d}.png")]
         if seedable:
             cmd += ["--seed", str(a.seed_base + i)]
@@ -82,11 +87,14 @@ def main():
     if got < 3:
         raise SystemExit(f"[FAIL] still {got}枚しか取れず")
     print(f"  {got}枚 取得")
-    # 1.5) 中央クロップ: 解説simのstillは端にテキストラベル(曲名/角度等)が乗る→ambientに不要。
-    #      各辺13%を切り落として除去(美しい中心の模様は残り,むしろ画面を埋めて見栄え向上)。
+    # 1.5) 中央クロップ: 解説sim(clean=False)のstillは端にテキストラベルが乗る→各辺13%切り落とし除去。
+    #      借用sim(clean=True, 円形模様等)はラベル無し→クロップしない(切れるのを防ぐ, user 2026-06-21)。
     from PIL import Image
     crop = 0.13
     for png in sorted(stills.glob("*.png")):
+        idx = int(png.stem[1:]) if png.stem[1:].isdigit() else -1
+        if idx in clean_idx:
+            continue   # クリーン素材はクロップせず全体を見せる
         try:
             im = Image.open(png); w, h = im.size
             dx, dy = int(w * crop), int(h * crop)
