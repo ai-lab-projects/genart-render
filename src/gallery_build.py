@@ -78,7 +78,11 @@ def main():
     seq = paths * a.loops
     clips = []
     for i, p in enumerate(seq):
-        c = kb_clip(p, a.per, motion=MOTIONS[i % len(MOTIONS)])   # 画像ごとに動きをローテ(多様化)
+        # ファイル名(s00_zoom_in.png)から画像ごとの最適な動きを読む。無ければローテにフォールバック。
+        import os as _os
+        stem = _os.path.splitext(_os.path.basename(p))[0]
+        mo = next((m for m in MOTIONS if stem.endswith(m)), MOTIONS[i % len(MOTIONS)])
+        c = kb_clip(p, a.per, motion=mo)
         if i > 0:
             c = c.with_effects([vfx.CrossFadeIn(a.xfade)])
         clips.append(c)
