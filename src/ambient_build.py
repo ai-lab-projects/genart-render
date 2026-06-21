@@ -21,6 +21,8 @@ SIMS = {
     "flow":     ("ambient_flow_simulator.py", "--variant"),   # 'silk lanes'|'tight eddies'|'broad streams'|'many vortices'
     "water":    ("water_simulator.py", "--palette"),          # teal 等
     "plasma":   ("plasma_simulator.py", None),                # 流れる液体色(解析式=高速・継ぎ目なし)
+    "interference": ("interference_drift_simulator.py", None),# 干渉縞のドリフト(新作・解析式seamless)
+    "metaballs":    ("metaballs_simulator.py", None),         # メタボール溶岩ランプ(新作・解析式seamless)
     # aurora/reaction/fire は user評価で除外(2026-06-21): auroraイマイチ, reaction=24sループ繰返し不向き, fire=前回不調
 }
 

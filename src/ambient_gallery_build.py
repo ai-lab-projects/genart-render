@@ -27,6 +27,14 @@ STILL_ENGINES = [
     ("percolation_simulator.py", True, []),
     ("greenberg_hastings_simulator.py", True, []),
     ("three_body_simulator.py", True, []),
+    # Agentic資産を借用(2026-06-21 still mode追加)= ギャラリー素材を別系統の絵柄で拡張。
+    # voronoiは鮮やか虹色でambientトーン非適合→除外。
+    ("apollonian_simulator.py", False, []),          # 円充填ガスケット
+    ("koch_simulator.py", False, []),                # 雪片フラクタル
+    ("dla_simulator.py", True, []),                  # 樹枝(霜/珊瑚)
+    ("sandpile_simulator.py", False, []),            # 砂山曼荼羅
+    ("wave_interference_simulator.py", False, []),   # 干渉縞
+    ("times_table_simulator.py", False, []),         # 倍数の花/曼荼羅
 ]
 
 
