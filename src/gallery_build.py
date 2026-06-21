@@ -26,7 +26,7 @@ def _fit_canvas(base: Image.Image) -> Image.Image:
         base = base.crop((max(x0 - pad, 0), max(y0 - pad, 0),
                           min(x1 + pad, base.width), min(y1 + pad, base.height)))
     iw, ih = base.size
-    scale = min(W * 0.94 / iw, H * 0.94 / ih)      # 94%でcontain(被写体を切らない)
+    scale = min(W * 0.86 / iw, H * 0.86 / ih)      # 86%でcontain(緩い動きでも被写体が切れないよう余白確保)
     nw, nh = max(1, int(iw * scale)), max(1, int(ih * scale))
     img = base.resize((nw, nh), Image.LANCZOS)
     canvas = Image.new("RGB", (W, H), BG)
@@ -37,21 +37,21 @@ def _fit_canvas(base: Image.Image) -> Image.Image:
 def kb_clip(path: str, per: float, motion: str = "zoom_in"):
     """Ken Burns: containフィット後に動き(ズームin/out・上下左右パン)を付ける。被写体は切れない。"""
     canvas = _fit_canvas(Image.open(path).convert("RGB"))
-    HEAD = 1.16                                    # パン/ズーム用のヘッドルーム
+    HEAD = 1.10                                    # パン/ズーム用のヘッドルーム(緩め)
     bw, bh = int(W * HEAD), int(H * HEAD)
     big = canvas.resize((bw, bh), Image.LANCZOS)
 
     def make(t):
         u = t / per
-        z, cx, cy = 1.08, bw / 2.0, bh / 2.0
+        z, cx, cy = 1.03, bw / 2.0, bh / 2.0
         if motion == "zoom_in":
-            z = 1.02 + 0.11 * u
+            z = 1.0 + 0.05 * u                     # 緩いズーム(最大5%=86%被写体の余白内→切れない)
         elif motion == "zoom_out":
-            z = 1.13 - 0.11 * u
-        else:                                      # pan系: 中ズーム固定で窓を平行移動
-            z = 1.10
+            z = 1.05 - 0.05 * u
+        else:                                      # pan系: 中ズーム固定で窓をゆっくり平行移動(可動域の6割)
+            z = 1.04
             cw, ch = W / z, H / z
-            mx, my = (bw - cw) / 2.0, (bh - ch) / 2.0
+            mx, my = (bw - cw) / 2.0 * 0.6, (bh - ch) / 2.0 * 0.6
             if motion == "pan_r":   cx = bw / 2 + (u - 0.5) * 2 * mx
             elif motion == "pan_l": cx = bw / 2 - (u - 0.5) * 2 * mx
             elif motion == "pan_d": cy = bh / 2 + (u - 0.5) * 2 * my

@@ -144,7 +144,7 @@ def render_still(output, w, h, seed=7):
     """育ち切った樹枝(十分成長した DLA)を発光配色で 1 枚の PNG に。
     walk は pure-Python で重いので still 用に grid/粒子数を抑える(枝形は十分出る)。"""
     out = Path(output); out.parent.mkdir(parents=True, exist_ok=True)
-    N = 121; target = 320
+    N = 161; target = 850          # 密な樹枝(旧320=薄い/しょぼい→user指摘でリッチに. CIで処理)
     snaps, total = simulate(target, N, seed=seed, record_every=10 ** 9)
     final = snaps[-1]
     arr = _img(final, w, h, total, glow=True)
