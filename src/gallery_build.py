@@ -37,27 +37,28 @@ def _fit_canvas(base: Image.Image) -> Image.Image:
 def kb_clip(path: str, per: float, motion: str = "zoom_in"):
     """Ken Burns: containフィット後に動き(ズームin/out・上下左右パン)を付ける。被写体は切れない。"""
     canvas = _fit_canvas(Image.open(path).convert("RGB"))
-    HEAD = 1.10                                    # パン/ズーム用のヘッドルーム(緩め)
-    bw, bh = int(W * HEAD), int(H * HEAD)
+    # big = canvas を S 倍に拡大 = ズームの拡大代。zoom=1 で全体(sharp downscale), zoom=S で中心(native解像度)。
+    S = 1.85
+    bw, bh = int(W * S), int(H * S)
     big = canvas.resize((bw, bh), Image.LANCZOS)
 
     def make(t):
         u = t / per
-        z, cx, cy = 1.03, bw / 2.0, bh / 2.0
+        cx, cy = bw / 2.0, bh / 2.0
         if motion == "zoom_in":
-            z = 1.0 + 0.05 * u                     # 緩いズーム(最大5%=86%被写体の余白内→切れない)
+            zoom = 1.0 + (S - 1.0) * u             # 全体 → 中心へダイブ(最後に詳細)
         elif motion == "zoom_out":
-            z = 1.05 - 0.05 * u
-        else:                                      # pan系: 中ズーム固定で窓をゆっくり平行移動(可動域の6割)
-            z = 1.04
-            cw, ch = W / z, H / z
-            mx, my = (bw - cw) / 2.0 * 0.6, (bh - ch) / 2.0 * 0.6
+            zoom = S - (S - 1.0) * u               # 中心(54%) → 最後にちょうど全体(意味のある引き)
+        else:                                      # pan系: 中ズーム固定で平行移動
+            zoom = 1.35
+            cw0, ch0 = bw / zoom, bh / zoom
+            mx, my = (bw - cw0) / 2.0, (bh - ch0) / 2.0
             if motion == "pan_r":   cx = bw / 2 + (u - 0.5) * 2 * mx
             elif motion == "pan_l": cx = bw / 2 - (u - 0.5) * 2 * mx
             elif motion == "pan_d": cy = bh / 2 + (u - 0.5) * 2 * my
             elif motion == "pan_u": cy = bh / 2 - (u - 0.5) * 2 * my
-        cw, ch = W / z, H / z
-        c = min(max(cx - cw / 2.0, 0.0), bw - cw)  # 窓がbig内に収まるようclamp
+        cw, ch = bw / zoom, bh / zoom              # big から切り出す窓(zoom=1→全体, zoom=S→中心)
+        c = min(max(cx - cw / 2.0, 0.0), bw - cw)
         f = min(max(cy - ch / 2.0, 0.0), bh - ch)
         a, e = cw / W, ch / H
         return np.asarray(big.transform((W, H), Image.AFFINE, (a, 0, c, 0, e, f), resample=Image.BILINEAR))
