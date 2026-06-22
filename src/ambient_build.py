@@ -90,8 +90,8 @@ def main():
     run([FF, "-v", "error", "-y", "-stream_loop", "-1", "-i", str(loop), "-i", str(music),
          "-filter_complex", f"[1:a]afade=t=in:st=0:d=2,afade=t=out:st={fo}:d=3[a]",
          "-map", "0:v", "-map", "[a]", "-t", str(a.seconds),
-         # bitrate cap(~1.8Mbps≈190MB/14分): ambient背景は detail でも cap で十分、巨大化防止(crfだと966MB)
-         "-c:v", "libx264", "-b:v", "1800k", "-maxrate", "2400k", "-bufsize", "4M",
+         # bitrate: 2560x1440(2K)の精細content(水caustics等)は1800kだと全画面で圧縮ノイズ→6Mbpsに(CI生成=VM負荷無関係, user 2026-06-22)
+         "-c:v", "libx264", "-b:v", "6000k", "-maxrate", "9000k", "-bufsize", "12M",
          "-preset", "veryfast", "-pix_fmt", "yuv420p",
          "-c:a", "aac", "-b:a", "192k", str(out)], cap=900)
     # 中間掃除(ディスク節約)。--music の本物素材は消さない(tmp配下の生成musicのみ削除)
