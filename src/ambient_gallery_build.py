@@ -19,14 +19,13 @@ FF = imageio_ffmpeg.get_ffmpeg_exe()
 # zoom_out=全体の構造が重要(最後に全体が見える), pan_d/pan_u=縦長で全体も詳細も見たい。
 # 除外: strange2d/attractor3d(8の字しょぼい)/magnetic_pendulum(重い粗い)/newton_basins(迷路汚い)/cyclic_ca(極彩色ブロック迷路)。
 # motion(2026-06-22 user): 画像に合わせ zoom_in(全体→詳細)/zoom_out(中心33%→全体=意味ある引き,S=3.0で十分寄せて開始)/pan を使い分け。
+# さらに除外: greenberg_hastings(極彩色ピンク迷路=cyclic_ca同類)/percolation/three_body(sparse)。
+# 確実に美しく穏やかな10エンジンに厳選。
 STILL_ENGINES = [
     ("phyllotaxis_simulator.py", False, [], False, "zoom_out"),    # ひまわり: 中心花托→全体螺旋
     ("newton_simulator.py", False, [], False, "zoom_in"),          # Newtonフラクタル詳細へ
     ("chladni_simulator.py", False, [], False, "pan_l"),           # 節パターンを横パン
-    ("differential_growth_simulator.py", True, [], False, "zoom_out"),  # 珊瑚: 中心の編み目→全体の塊
-    ("percolation_simulator.py", True, [], False, "zoom_out"),     # クラスタ: 一部→全体
-    ("greenberg_hastings_simulator.py", True, [], False, "pan_r"), # 螺旋波を横パン
-    ("three_body_simulator.py", True, [], False, "zoom_out"),      # 軌道: 一部→全体の軌跡
+    ("differential_growth_simulator.py", True, [], False, "zoom_out"),  # 珊瑚: 中心→全体の塊
     # Agentic借用(2026-06-21)。ラベル無し→clean=True(クロップしない)。voronoi虹色で除外。
     ("apollonian_simulator.py", False, [], True, "zoom_in"),       # 無限の小円へダイブ
     ("koch_simulator.py", False, [], True, "zoom_in"),             # 雪片の縁詳細へ
