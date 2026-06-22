@@ -22,8 +22,8 @@ STILL_ENGINES = [
     ("phyllotaxis_simulator.py", False, [], False, "zoom_out"),    # ひまわり=全体の螺旋が美
     ("newton_simulator.py", False, [], False, "zoom_in"),          # Newtonフラクタル=境界に無限の詳細
     ("chladni_simulator.py", False, [], False, "zoom_out"),        # クラドニ=全体の節パターン
-    ("newton_basins_simulator.py", False, [], False, "zoom_in"),   # フラクタル境界(detailed)
     ("cyclic_ca_simulator.py", False, [], False, "zoom_out"),      # 全体の渦巻き場
+    # newton_basins除外(2026-06-22 user 7:17「迷路汚い」: 境界がノイジーで拡大に弱い)
     ("differential_growth_simulator.py", True, [], False, "zoom_out"),  # 全体の蛇行曲線
     ("percolation_simulator.py", True, [], False, "zoom_out"),     # 全体のクラスタ
     ("greenberg_hastings_simulator.py", True, [], False, "zoom_out"),  # 全体の螺旋波
