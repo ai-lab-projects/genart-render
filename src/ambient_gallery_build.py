@@ -17,24 +17,23 @@ FF = imageio_ffmpeg.get_ffmpeg_exe()
 # (script, seedable, flags, clean, motion)。clean=True=ラベル無し→クロップしない。
 # motion = 画像の性質で最適化(user 2026-06-21): zoom_in=詳細が小スケールに続くフラクタル(細部を見せる),
 # zoom_out=全体の構造が重要(最後に全体が見える), pan_d/pan_u=縦長で全体も詳細も見たい。
-# 除外(2026-06-22 user): strange2d/attractor3d=sparse「8の字しょぼい」, magnetic_pendulum=重い+粗い。
+# 除外: strange2d/attractor3d(8の字しょぼい)/magnetic_pendulum(重い粗い)/newton_basins(迷路汚い)/cyclic_ca(極彩色ブロック迷路2:41)。
+# motion: zoom_out廃止(2026-06-22 user: 放射状/コンパクトは「最初から全体見える」で無意味)→ zoom_in(全体→詳細=必ず機能)+pan(多様性)。
 STILL_ENGINES = [
-    ("phyllotaxis_simulator.py", False, [], False, "zoom_out"),    # ひまわり=全体の螺旋が美
-    ("newton_simulator.py", False, [], False, "zoom_in"),          # Newtonフラクタル=境界に無限の詳細
-    ("chladni_simulator.py", False, [], False, "zoom_out"),        # クラドニ=全体の節パターン
-    ("cyclic_ca_simulator.py", False, [], False, "zoom_out"),      # 全体の渦巻き場
-    # newton_basins除外(2026-06-22 user 7:17「迷路汚い」: 境界がノイジーで拡大に弱い)
-    ("differential_growth_simulator.py", True, [], False, "zoom_out"),  # 全体の蛇行曲線
-    ("percolation_simulator.py", True, [], False, "zoom_out"),     # 全体のクラスタ
-    ("greenberg_hastings_simulator.py", True, [], False, "zoom_out"),  # 全体の螺旋波
-    ("three_body_simulator.py", True, [], False, "zoom_out"),      # 全体の軌道
-    # Agentic資産を借用(2026-06-21)= 別系統の絵柄。ラベル無し→clean=True(クロップしない)。voronoiは虹色で除外。
-    ("apollonian_simulator.py", False, [], True, "zoom_out"),      # 円充填=全体の円が大事(zoom_out, 切れ防止)
-    ("koch_simulator.py", False, [], True, "zoom_out"),            # 雪片=全体の形が大事(zoom_out)
-    ("dla_simulator.py", True, [], True, "zoom_out"),              # 樹枝=全体の枝分かれが美
-    ("sandpile_simulator.py", False, [], True, "zoom_out"),        # 砂山=全体の曼荼羅
-    ("wave_interference_simulator.py", False, [], True, "zoom_out"),  # 干渉=全体の縞
-    ("times_table_simulator.py", False, [], True, "zoom_out"),     # 倍数=全体の花envelope
+    ("phyllotaxis_simulator.py", False, [], False, "zoom_in"),     # ひまわり螺旋へダイブ
+    ("newton_simulator.py", False, [], False, "zoom_in"),          # Newtonフラクタル詳細へ
+    ("chladni_simulator.py", False, [], False, "pan_l"),           # 節パターンを横パン
+    ("differential_growth_simulator.py", True, [], False, "zoom_in"),   # 蛇行曲線(珊瑚)の詳細へ
+    ("percolation_simulator.py", True, [], False, "pan_r"),        # クラスタを横パン
+    ("greenberg_hastings_simulator.py", True, [], False, "zoom_in"),    # 螺旋波詳細へ
+    ("three_body_simulator.py", True, [], False, "pan_l"),         # 軌道を横パン
+    # Agentic借用(2026-06-21)。ラベル無し→clean=True(クロップしない)。voronoi虹色で除外。
+    ("apollonian_simulator.py", False, [], True, "zoom_in"),       # 無限の小円へダイブ
+    ("koch_simulator.py", False, [], True, "zoom_in"),             # 雪片の縁詳細へ
+    ("dla_simulator.py", True, [], True, "zoom_in"),               # 樹枝の枝先へダイブ
+    ("sandpile_simulator.py", False, [], True, "pan_r"),           # 曼荼羅を横パン
+    ("wave_interference_simulator.py", False, [], True, "pan_u"),  # 干渉縞を縦パン
+    ("times_table_simulator.py", False, [], True, "zoom_in"),      # 花の中心へダイブ
 ]
 
 
