@@ -17,21 +17,21 @@ FF = imageio_ffmpeg.get_ffmpeg_exe()
 # (script, seedable, flags, clean, motion)。clean=True=ラベル無し→クロップしない。
 # motion = 画像の性質で最適化(user 2026-06-21): zoom_in=詳細が小スケールに続くフラクタル(細部を見せる),
 # zoom_out=全体の構造が重要(最後に全体が見える), pan_d/pan_u=縦長で全体も詳細も見たい。
-# 除外: strange2d/attractor3d(8の字しょぼい)/magnetic_pendulum(重い粗い)/newton_basins(迷路汚い)/cyclic_ca(極彩色ブロック迷路2:41)。
-# motion: zoom_out廃止(2026-06-22 user: 放射状/コンパクトは「最初から全体見える」で無意味)→ zoom_in(全体→詳細=必ず機能)+pan(多様性)。
+# 除外: strange2d/attractor3d(8の字しょぼい)/magnetic_pendulum(重い粗い)/newton_basins(迷路汚い)/cyclic_ca(極彩色ブロック迷路)。
+# motion(2026-06-22 user): 画像に合わせ zoom_in(全体→詳細)/zoom_out(中心33%→全体=意味ある引き,S=3.0で十分寄せて開始)/pan を使い分け。
 STILL_ENGINES = [
-    ("phyllotaxis_simulator.py", False, [], False, "zoom_in"),     # ひまわり螺旋へダイブ
+    ("phyllotaxis_simulator.py", False, [], False, "zoom_out"),    # ひまわり: 中心花托→全体螺旋
     ("newton_simulator.py", False, [], False, "zoom_in"),          # Newtonフラクタル詳細へ
     ("chladni_simulator.py", False, [], False, "pan_l"),           # 節パターンを横パン
-    ("differential_growth_simulator.py", True, [], False, "zoom_in"),   # 蛇行曲線(珊瑚)の詳細へ
-    ("percolation_simulator.py", True, [], False, "pan_r"),        # クラスタを横パン
-    ("greenberg_hastings_simulator.py", True, [], False, "zoom_in"),    # 螺旋波詳細へ
-    ("three_body_simulator.py", True, [], False, "pan_l"),         # 軌道を横パン
+    ("differential_growth_simulator.py", True, [], False, "zoom_out"),  # 珊瑚: 中心の編み目→全体の塊
+    ("percolation_simulator.py", True, [], False, "zoom_out"),     # クラスタ: 一部→全体
+    ("greenberg_hastings_simulator.py", True, [], False, "pan_r"), # 螺旋波を横パン
+    ("three_body_simulator.py", True, [], False, "zoom_out"),      # 軌道: 一部→全体の軌跡
     # Agentic借用(2026-06-21)。ラベル無し→clean=True(クロップしない)。voronoi虹色で除外。
     ("apollonian_simulator.py", False, [], True, "zoom_in"),       # 無限の小円へダイブ
     ("koch_simulator.py", False, [], True, "zoom_in"),             # 雪片の縁詳細へ
     ("dla_simulator.py", True, [], True, "zoom_in"),               # 樹枝の枝先へダイブ
-    ("sandpile_simulator.py", False, [], True, "pan_r"),           # 曼荼羅を横パン
+    ("sandpile_simulator.py", False, [], True, "zoom_out"),        # 曼荼羅: 中心→全体
     ("wave_interference_simulator.py", False, [], True, "pan_u"),  # 干渉縞を縦パン
     ("times_table_simulator.py", False, [], True, "zoom_in"),      # 花の中心へダイブ
 ]

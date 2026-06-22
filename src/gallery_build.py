@@ -38,8 +38,8 @@ def kb_clip(path: str, per: float, motion: str = "zoom_in"):
     """Ken Burns: containフィット後に動き(ズームin/out・上下左右パン)を付ける。被写体は切れない。"""
     canvas = _fit_canvas(Image.open(path).convert("RGB"))
     # big = canvas を S 倍に拡大 = ズームの拡大代。zoom=1 で全体(sharp downscale), zoom=S で中心。
-    # S=2.4: zoom_outを「全体が見えないくらい寄った状態(中心42%)」から始める=意味ある引き(user 2026-06-22 7:23)
-    S = 2.4
+    # S=3.0: zoom_outを「全体が見えない中心33%」から開始=意味ある引き(user 2026-06-22: 開始を十分寄せる)
+    S = 3.0
     bw, bh = int(W * S), int(H * S)
     big = canvas.resize((bw, bh), Image.LANCZOS)
 
