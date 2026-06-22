@@ -17,22 +17,20 @@ FF = imageio_ffmpeg.get_ffmpeg_exe()
 # (script, seedable, flags, clean, motion)。clean=True=ラベル無し→クロップしない。
 # motion = 画像の性質で最適化(user 2026-06-21): zoom_in=詳細が小スケールに続くフラクタル(細部を見せる),
 # zoom_out=全体の構造が重要(最後に全体が見える), pan_d/pan_u=縦長で全体も詳細も見たい。
+# 除外(2026-06-22 user): strange2d/attractor3d=sparse「8の字しょぼい」, magnetic_pendulum=重い+粗い。
 STILL_ENGINES = [
-    ("strange2d_simulator.py", False, [], False, "zoom_in"),       # ストレンジアトラクタ=細い繊維構造
     ("phyllotaxis_simulator.py", False, [], False, "zoom_out"),    # ひまわり=全体の螺旋が美
     ("newton_simulator.py", False, [], False, "zoom_in"),          # Newtonフラクタル=境界に無限の詳細
     ("chladni_simulator.py", False, [], False, "zoom_out"),        # クラドニ=全体の節パターン
-    ("attractor3d_simulator.py", False, [], False, "zoom_out"),    # 3Dアトラクタ=全体形
-    ("newton_basins_simulator.py", False, [], False, "zoom_in"),   # フラクタル境界
-    ("magnetic_pendulum_simulator.py", False, [], False, "zoom_in"),  # フラクタルbasin
+    ("newton_basins_simulator.py", False, [], False, "zoom_in"),   # フラクタル境界(detailed)
     ("cyclic_ca_simulator.py", False, [], False, "zoom_out"),      # 全体の渦巻き場
     ("differential_growth_simulator.py", True, [], False, "zoom_out"),  # 全体の蛇行曲線
     ("percolation_simulator.py", True, [], False, "zoom_out"),     # 全体のクラスタ
     ("greenberg_hastings_simulator.py", True, [], False, "zoom_out"),  # 全体の螺旋波
     ("three_body_simulator.py", True, [], False, "zoom_out"),      # 全体の軌道
     # Agentic資産を借用(2026-06-21)= 別系統の絵柄。ラベル無し→clean=True(クロップしない)。voronoiは虹色で除外。
-    ("apollonian_simulator.py", False, [], True, "zoom_in"),       # 円充填=無限に小円が続く
-    ("koch_simulator.py", False, [], True, "zoom_in"),             # 雪片=自己相似フラクタル
+    ("apollonian_simulator.py", False, [], True, "zoom_out"),      # 円充填=全体の円が大事(zoom_out, 切れ防止)
+    ("koch_simulator.py", False, [], True, "zoom_out"),            # 雪片=全体の形が大事(zoom_out)
     ("dla_simulator.py", True, [], True, "zoom_out"),              # 樹枝=全体の枝分かれが美
     ("sandpile_simulator.py", False, [], True, "zoom_out"),        # 砂山=全体の曼荼羅
     ("wave_interference_simulator.py", False, [], True, "zoom_out"),  # 干渉=全体の縞
